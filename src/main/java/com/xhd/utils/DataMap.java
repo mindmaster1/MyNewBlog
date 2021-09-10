@@ -16,6 +16,7 @@ public class DataMap<T> extends LinkedHashMap {
     private String message;
     private Boolean success;
 
+    //代表一个任意形式的数据，用于携带返回
     private T data;
 
     private DataMap() {

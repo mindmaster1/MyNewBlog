@@ -28,7 +28,7 @@ public class Article {
     private String publishDate;
 
     //最后一次修改时间
-    private String update;
+    private String updateDate;
 
     //文章内容
     private String articleContent;
@@ -37,7 +37,7 @@ public class Article {
     private String articleTags;
 
     //文章类型
-    private String acticleType;
+    private String articleType;
 
     //博客分类
     private  String articleCategories;
