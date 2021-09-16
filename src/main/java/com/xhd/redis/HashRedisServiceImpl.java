@@ -1,0 +1,118 @@
+package com.xhd.redis;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.lang.reflect.Field;
+
+
+/**
+ * @author:xinghaodong
+ * @Date:2021 - 9 - 14 - 16:31
+ * @Description: Hash类型的redis操作
+ * @version:
+ */
+@Service
+public class HashRedisServiceImpl implements RedisService{
+    @Autowired
+    private RedisTemplate<String,Object> redisTemplate;
+
+    /**
+     *  单个设置hash的键值对
+     * @param  key field hv
+     * @return
+     */
+    public void put(String key,Object field,Object hv){
+        HashOperations<String,Object,Object> vo = redisTemplate.opsForHash();
+        vo.put(key,field,hv);
+    }
+
+    /**
+     * 通过实体类反射方式设置key和value
+     * setAccessible:accessible将此对象的标志设置为指示的布尔值。值true指示反射对象在使用时应禁止 Java 语言访问检查。值false表示反射对象应该强制执行 Java 语言访问检查。
+     * @param key key值
+     * @param value 要设置的value值
+     * @param entityClass 要设置的value值的Class
+     */
+    public void put(String key,Object value,Class<?> entityClass){
+        HashOperations<String,Object,Object> vo = redisTemplate.opsForHash();
+        //通过反射获得对象属性
+        Field[] fields = entityClass.getDeclaredFields();
+        for(Field field : fields){
+            field.setAccessible(true);
+            //保存对象和值到对应的key下
+            try {
+                vo.put(key, field.getName(), field.get(value));
+            }catch(IllegalAccessException e){
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    /**
+     * 仅当存在field时才进行设置
+     * @return 不存在--true   存在--false
+     */
+    public Boolean hashPutIfAbsent(String key, Object hashKey, Object value) {
+        return redisTemplate.opsForHash().putIfAbsent(key, hashKey, value);
+    }
+
+
+    /**
+     * 获得对应key值下的属性field的值
+     * @param key key值
+     * @param field 要获得值的属性
+     * @return 如果存在则返回值，否则返回null
+     */
+    public Object get(String key, Object field){
+        HashOperations<String, Object, Object> vo = redisTemplate.opsForHash();
+        return vo.get(key, field);
+    }
+
+    /**
+     * 获得key的所有值
+     */
+    public Object getAllFieldAndValue(String key){
+        return redisTemplate.opsForHash().entries(key);
+    }
+
+    /**
+     * 通过实体类删除指定key下的所有字段
+     */
+    public void hashDelete(String key, Class<?> entityClass){
+        Field[] fields = entityClass.getDeclaredFields();
+        for(Field field : fields){
+            redisTemplate.opsForHash().delete(key, field.getName());
+        }
+    }
+
+    /**
+     * 删除指定key下的指定field
+     */
+    public void  hashDelete(String key, Object field){
+        redisTemplate.opsForHash().delete(key, field);
+    }
+
+    /**
+     * key的指定字段的整数值加上增量increment
+     */
+    public Long hashIncrement(String key, Object field, long increment) {
+        return redisTemplate.opsForHash().increment(key, field, increment);
+    }
+
+
+    //判断key是否存在
+    @Override
+    public Boolean hashkey(String key) {
+        return redisTemplate.opsForHash().getOperations().hasKey(key);
+    }
+
+    //判断当前key下的field是否存在
+    public Boolean hasHashKey(String key,Object field){
+        return redisTemplate.opsForHash().hasKey(key,field);
+    }
+}
